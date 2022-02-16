@@ -62,9 +62,11 @@ public class DownloadiCloudFiles: CAPPlugin,  UIDocumentPickerDelegate  {
             if file.pathExtension.lowercased() == "icloud" {
                 do {
                     try fileManager.startDownloadingUbiquitousItem(at: file)
+                    handleDownload(url: file)
                 } catch {
                     print("Unexpected error: \(error).")
                 }
+                
             } else {
                 if fileManager.fileExists(atPath: file.path, isDirectory:&isDirectory) {
                     if isDirectory.boolValue && !ignores.contains(file.lastPathComponent) {
@@ -76,5 +78,29 @@ public class DownloadiCloudFiles: CAPPlugin,  UIDocumentPickerDelegate  {
             }
         }
         return downloaded
+    }
+    
+    func handleDownload(url: URL) {
+        var lastPathComponent = url.lastPathComponent
+        lastPathComponent.removeFirst()
+        let dirPath = url.deletingLastPathComponent().path
+        let filePath = dirPath + "/" + lastPathComponent.replacingOccurrences(of: ".icloud", with: "")
+        
+        // only check .md .org .css .edn files
+        let extensions = [
+            "md",
+            "org",
+            "css",
+            "edn"
+        ]
+        
+        let neededToHandle = !extensions.allSatisfy{ !filePath.hasSuffix($0) }
+        
+        var isDownloaded = false
+        while !isDownloaded {
+            if fileManager.fileExists(atPath: filePath) && neededToHandle {
+                    isDownloaded = true
+            }
+        }
     }
 }
